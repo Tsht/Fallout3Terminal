@@ -12,6 +12,10 @@ done
 
 COLUMNS=12
 
+showclk ()
+{
+    while sleep 1;do tput sc;tput cup 0 $(($(tput cols)-29));date;tput rc;done &
+}
 
 #This function is to display the top header in a centred alignment!
 display_center(){
@@ -27,20 +31,18 @@ greeter=$'
 Personal Terminal "Proto-Boy" Manufactured by RobCo
 ___________________________________________________'
 
-
-
-#Main Menu Screen
-mainmenufunc () 
+displaygreeter ()
 {
-clear
-
 #display the Menu text
 play -q $BASE_DIR/ui_hacking_charscroll.wav
 display_center "$BASE_DIR/greeterheader.txt" | pv -qL 80
 echo "$greeter" | pv -qL 80
 play -q $BASE_DIR/ui_hacking_charscroll.wav
-echo What would you like to do? | pv -qL 80
 
+}
+
+displaymainmenu()
+{
 #Display the menu options
 COLUMNS=12
 select menuchoice in "View Journal Entries" "Log a Journal Entry" "Delete a Journal Entry" "Proceed to Desktop"
@@ -67,6 +69,53 @@ do
     ;;
     esac
 done
+}
+
+mainmenupass ()
+{
+
+clear
+displaygreeter
+
+showclk
+
+echo -n "Utilisateur : " | pv -qL 80
+read utilisateur
+echo -n "Mot de passe : " | pv -qL 80
+read -s password
+printf "\n"
+getent passwd $utilisateur > /dev/null
+if [ $? -eq 0 ]; then
+    sudo -k
+    if sudo -u $utilisateur -lS &> /dev/null << EOF
+    $password
+EOF
+    then
+        echo 'Correct password.'
+    else 
+        echo 'Wrong password.'
+    fi    
+        printf "Bonjour, $utilisateur\n"
+    else
+        printf "L'utilisateur n'existe pas"
+    fi
+read
+
+displaymainmenu
+
+}
+
+#Main Menu Screen
+mainmenufunc () 
+{
+clear
+
+#display the Menu text
+displaygreeter
+echo What would you like to do? | pv -qL 80
+
+displaymainmenu
+
 }
 
 
@@ -126,9 +175,7 @@ writeentryfunc ()
 
 #displays menu text
 clear
-display_center "$BASE_DIR/greeterheader.txt"
-echo "$greeter" 
-play -q $BASE_DIR/ui_hacking_charscroll.wav
+displaygreeter
 echo "What would you like to name the entry?" | pv -qL 80
 
 #reads user input
@@ -231,31 +278,8 @@ display_center "$BASE_DIR/greeterheader.txt"
 echo "$greeter" 
 play -q $BASE_DIR/ui_hacking_charscroll.wav
 echo What would you like to do? | pv -qL 80
-COLUMNS=12
-select menuchoice in "View Journal Entries" "Log a Journal Entry" "Delete a Journal Entry" "Proceed to Desktop"
-do
-    case $menuchoice in
-    "View Journal Entries")
-    play -q $BASE_DIR/ui_hacking_charenter_01.wav
-    viewentriesfunc
-    ;;
-    "Log a Journal Entry")
-    play -q $BASE_DIR/ui_hacking_charenter_01.wav
-   writeentryfunc
-    ;;
-    "Delete a Journal Entry")
-    play -q $BASE_DIR/ui_hacking_charenter_01.wav
-    deleteentryfunc
-    ;;
-    "Proceed to Desktop")
-    play -q $BASE_DIR/ui_hacking_charenter_01.wav
-    echo Goodbye! && exit
-    ;;
-    *)
-    play -q $BASE_DIR/ui_hacking_passbad.wav
-    ;;
-    esac
-done
+
+displaymainmenu
 }
 
 
@@ -294,4 +318,4 @@ play -q $BASE_DIR/ui_hacking_passgood.wav
 sleep 1
 
 #goes to the main menu
-mainmenufunc;
+mainmenupass;
