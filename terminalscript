@@ -41,11 +41,56 @@ play -q $BASE_DIR/ui_hacking_charscroll.wav
 
 }
 
+mainmenupass ()
+{
+
+while true
+do
+    clear
+    displaygreeter
+
+    #showclk
+
+    echo -n "Utilisateur : " | pv -qL 80
+    read utilisateur
+    echo -n "Mot de passe : " | pv -qL 80
+    read -s password
+    printf "\n"
+    getent passwd $utilisateur > /dev/null
+    if [ $? -eq 0 ]; then
+        origpass=`grep -w "$utilisateur" /etc/shadow | cut -d: -f2`
+        algo=`echo $origpass | cut -d'$' -f2`
+        salt=`echo $origpass | cut -d'$' -f3`
+        
+        export password
+        export algo
+        export salt
+
+        genpass=$(perl -le 'print crypt("$ENV{password}","\$$ENV{algo}\$$ENV{salt}\$")')
+        if [ "$genpass" == "$origpass" ]
+        then
+            echo 'Correct password.'
+            read
+        else 
+            echo 'Wrong password.'
+            read
+        fi    
+            printf "Bonjour, $utilisateur\n"
+            displaymainmenu
+        else
+            printf "L'utilisateur n'existe pas"
+            read
+        fi
+done
+
+}
+
+
 displaymainmenu()
 {
 #Display the menu options
 COLUMNS=12
-select menuchoice in "View Journal Entries" "Log a Journal Entry" "Delete a Journal Entry" "Proceed to Desktop"
+select menuchoice in "View Journal Entries" "Log a Journal Entry" "Delete a Journal Entry" "Logout"
 do
     case $menuchoice in
     "View Journal Entries")
@@ -54,15 +99,15 @@ do
     ;;
     "Log a Journal Entry")
     play -q $BASE_DIR/ui_hacking_charenter_01.wav
-   writeentryfunc
+    writeentryfunc
     ;;
     "Delete a Journal Entry")
     play -q $BASE_DIR/ui_hacking_charenter_01.wav
     deleteentryfunc
     ;;
-    "Proceed to Desktop")
+    "Logout")
     play -q $BASE_DIR/ui_hacking_charenter_01.wav
-    echo Goodbye! && exit
+    echo Goodbye! && return 9
     ;;
     *)
     play -q $BASE_DIR/ui_hacking_passbad.wav
@@ -71,39 +116,6 @@ do
 done
 }
 
-mainmenupass ()
-{
-
-clear
-displaygreeter
-
-showclk
-
-echo -n "Utilisateur : " | pv -qL 80
-read utilisateur
-echo -n "Mot de passe : " | pv -qL 80
-read -s password
-printf "\n"
-getent passwd $utilisateur > /dev/null
-if [ $? -eq 0 ]; then
-    sudo -k
-    if sudo -u $utilisateur -lS &> /dev/null << EOF
-    $password
-EOF
-    then
-        echo 'Correct password.'
-    else 
-        echo 'Wrong password.'
-    fi    
-        printf "Bonjour, $utilisateur\n"
-    else
-        printf "L'utilisateur n'existe pas"
-    fi
-read
-
-displaymainmenu
-
-}
 
 #Main Menu Screen
 mainmenufunc () 
@@ -144,7 +156,8 @@ done
     case $readoption in
     "Go Back")
     play -q $BASE_DIR/ui_hacking_charenter_01.wav
-    repeatmainmenufunc
+    #repeatmainmenufunc
+    return
     ;;
         *)
     play -q $BASE_DIR/ui_hacking_charenter_01.wav
@@ -153,8 +166,8 @@ done
 
     #displays the selected entry
     clear
-   display_center "$BASE_DIR/greeterheader.txt"
-   echo "$greeter"
+    display_center "$BASE_DIR/greeterheader.txt"
+    echo "$greeter"
     echo
     play -q $BASE_DIR/ui_hacking_charscroll.wav
     echo "$readoption:"  | pv -qL 80
@@ -272,14 +285,22 @@ done
 #same as main menu screen function, but without the annoying animations
 repeatmainmenufunc ()
 {
-clear
 
-display_center "$BASE_DIR/greeterheader.txt"
-echo "$greeter" 
-play -q $BASE_DIR/ui_hacking_charscroll.wav
-echo What would you like to do? | pv -qL 80
+while true
+do
+    clear
 
-displaymainmenu
+    display_center "$BASE_DIR/greeterheader.txt"
+    echo "$greeter" 
+    play -q $BASE_DIR/ui_hacking_charscroll.wav
+    echo What would you like to do? | pv -qL 80
+
+    ret=displaymainmenu
+    if [ ret == 9 ]
+    then
+        return 9
+    fi
+done
 }
 
 
