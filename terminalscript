@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
 BASE_DIR="$(cd "$(dirname "$0")"; pwd)" || exit 2
+#HACK_FILE=/media/usb0/hack
+HACK_FILE=hack
 
 IFS=$'\n'
 entrylist=('Go Back')
@@ -10,13 +12,55 @@ i=${i##*/}
 entrylist+=("$i")
 done
 
-hackeruser=fallout_hack
+hackeruser=hacker
 
 COLUMNS=12
 
 showclk ()
 {
     while sleep 1;do tput sc;tput cup 0 $(($(tput cols)-29));date;tput rc;done &
+}
+
+
+
+showmessage ()
+{
+    
+    while sleep 1; do 
+        echo "test"
+        hack_plugged=1
+        echo $((nb-1)) > $HACK_FILE
+        tput sc
+        tput cup 0 $(($(tput cols)-29))
+        echo "HACK"
+        tput rc
+    done &
+}
+
+
+testkeyhack ()
+{
+     hack_plugged=0
+     retcode=1
+#    while sleep 1; do 
+        if [ -e $HACK_FILE ]; then 
+          nb=`cat $HACK_FILE`
+          if ((nb > 0)); then
+            if ((hack_plugged == 0)); then
+                  hack_plugged=1
+                  echo $((nb-1)) > $HACK_FILE
+                  (cd Fallout_Terminal_Game/venv/; python3 hack_cmd.py)
+                  retcode=$?
+                  tput sc
+                  tput cup 0 $(($(tput cols)-29))
+                  echo $retcode
+                  tput rc
+                  read
+            fi
+          fi
+        fi
+        return $retcode
+#        done &
 }
 
 #This function is to display the top header in a centred alignment!
@@ -52,37 +96,48 @@ do
     displaygreeter
 
     #showclk
+    testkeyhack
+    retcodekeyhack=$?
+    #echo $retcodekeyhack
+    if ((retcodekeyhack == 0)); then
+        utilisateur=hacker
+        printf "Bonjour, hacker\n"
+        read
+        displaymainmenu
+    else
+    
+        echo -n "Utilisateur : " | pv -qL 80
+        read utilisateur
+        echo -n "Mot de passe : " | pv -qL 80
+        read -s password
+        printf "\n"
+        getent passwd $utilisateur > /dev/null
+        if [ $? -eq 0 ]; then
+            origpass=`grep -w "$utilisateur" /etc/shadow | cut -d: -f2`
+            algo=`echo $origpass | cut -d'$' -f2`
+            salt=`echo $origpass | cut -d'$' -f3`
+            
+            export password
+            export algo
+            export salt
 
-    echo -n "Utilisateur : " | pv -qL 80
-    read utilisateur
-    echo -n "Mot de passe : " | pv -qL 80
-    read -s password
-    printf "\n"
-    getent passwd $utilisateur > /dev/null
-    if [ $? -eq 0 ]; then
-        origpass=`grep -w "$utilisateur" /etc/shadow | cut -d: -f2`
-        algo=`echo $origpass | cut -d'$' -f2`
-        salt=`echo $origpass | cut -d'$' -f3`
-        
-        export password
-        export algo
-        export salt
-
-        genpass=$(perl -le 'print crypt("$ENV{password}","\$$ENV{algo}\$$ENV{salt}\$")')
-        if [ "$genpass" == "$origpass" ]
-        then
-            echo 'Correct password.'
-            read
-        else 
-            echo 'Wrong password.'
-            read
-        fi    
-            printf "Bonjour, $utilisateur\n"
-            displaymainmenu
+            genpass=$(perl -le 'print crypt("$ENV{password}","\$$ENV{algo}\$$ENV{salt}\$")')
+            if [ "$genpass" == "$origpass" ]
+            then
+                echo 'Correct password.'
+                printf "Bonjour, $utilisateur\n"
+                read
+                displaymainmenu
+            else 
+                echo 'Wrong password.'
+                read
+            fi    
         else
             printf "L'utilisateur n'existe pas"
             read
         fi
+        
+    fi
 done
 
 }
