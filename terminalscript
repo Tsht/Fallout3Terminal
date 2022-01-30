@@ -144,7 +144,7 @@ entrydirs=('')
 entryusers=('')
 
 ##debug
-hackeruser="blue1"
+#hackeruser="blue1"
 ##
 
 if [ $utilisateur = $hackeruser ]
