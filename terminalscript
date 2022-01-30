@@ -141,9 +141,13 @@ userdirs=''
 #adding all the text files as individual strings to be used as a selection menu
 entrynames=('Go Back')
 entrydirs=('')
+entryusers=('')
 
-if [ $utilisateur == $hackeruser ]
-#if true
+##debug
+hackeruser="blue1"
+##
+
+if [ $utilisateur = $hackeruser ]
 then
 users=`members blue`
 users+=" "
@@ -160,21 +164,19 @@ do
   readarray -d '' -O "${#entrydirs[@]}" entrydirs < <(find $userdir/fallout_entries/entries -type f -print0)
 done
 
- for edd in ${!entrydirs[@]}
-    do
-        echo $edd
-    done
-
 for i in ${entrydirs[@]}
 do
-    echo -e "nextb"
-    echo -e $i
-    echo -e "nexta"
+    usrdir=`echo $i | cut -f 3 -d /`
     i=${i##*/}
-    entrynames+=("$i")
-    echo -e $i
+    if [ $utilisateur = $hackeruser ]
+    then
+        entrynames+=("$i ($usrdir)")
+    else
+        entrynames+=("$i")
+    fi
+#    echo -e $i
 done
-read
+#read
 }
 
 #Option 1 Menu, Viewing Journal Entries
@@ -214,40 +216,27 @@ viewentriesfunc ()
     #cat< "$BASE_DIR/entries/$readoption"  | pv -qL 80
     
     ##dbg
-    for edd in ${entrydirs[@]}
-    do
-        echo $edd
-    done
-
-    for edd in ${!entrydirs[@]}
-    do
-        echo $edd
-    done
-
-    for edd in ${entrynames[@]}
-    do
-        echo $edd
-    done
-
-
-    echo "red option : " $readoption
-
-    read
-
-    
+    #for edd in ${entrydirs[@]}
+    #do
+    #    echo $edd
+    #done
+    #for edd in ${!entrydirs[@]}
+    #do
+    #    echo $edd
+    #done
+    #for edd in ${entrynames[@]}
+    #do
+    #    echo $edd
+    #done
+    #
+    #echo "red option : " $readoption
+    #read
     ##
+
     for i in ${!entrynames[@]}
     do
-        echo  "$i"
-        echo ">>"
-        echo "${entrynames[$i]}"
-        echo "<<"
-        echo "${entrydirs[$i]}"
-        echo "--"
         if [[ "${entrynames[$i]}" = $readoption ]]
         then
-            echo "this is it"
-            echo "${entrydirs[$i]}"
             cat< "${entrydirs[$i]}"  | pv -qL 80
         fi
     done
