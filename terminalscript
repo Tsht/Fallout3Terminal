@@ -10,6 +10,8 @@ i=${i##*/}
 entrylist+=("$i")
 done
 
+hackeruser=fallout_hack
+
 COLUMNS=12
 
 showclk ()
@@ -90,10 +92,11 @@ displaymainmenu()
 {
 #Display the menu options
 COLUMNS=12
-select menuchoice in "View Journal Entries" "Log a Journal Entry" "Delete a Journal Entry" "Logout"
+
+select menuchoice in "View Journal Entries for $utilisateur" "Log a Journal Entry" "Delete a Journal Entry" "Logout"
 do
     case $menuchoice in
-    "View Journal Entries")
+    "View Journal Entries for $utilisateur")
     play -q $BASE_DIR/ui_hacking_charenter_01.wav
     viewentriesfunc
     ;;
@@ -130,28 +133,64 @@ displaymainmenu
 
 }
 
+getentries ()
+{
+#find entries for user
+userdirs=''
+
+#adding all the text files as individual strings to be used as a selection menu
+entrynames=('Go Back')
+entrydirs=('')
+
+if [ $utilisateur == $hackeruser ]
+#if true
+then
+users=`members blue`
+users+=" "
+users+=`members red`
+IFS=' ' read -a usersarr <<< $users
+else
+usersarr=($utilisateur)
+fi
+
+for user in ${usersarr[@]}
+do
+  userdir=`getent passwd $user | cut -d":" -f6`
+  #This line needs bash 4.4-alpha or better
+  readarray -d '' -O "${#entrydirs[@]}" entrydirs < <(find $userdir/fallout_entries/entries -type f -print0)
+done
+
+ for edd in ${!entrydirs[@]}
+    do
+        echo $edd
+    done
+
+for i in ${entrydirs[@]}
+do
+    echo -e "nextb"
+    echo -e $i
+    echo -e "nexta"
+    i=${i##*/}
+    entrynames+=("$i")
+    echo -e $i
+done
+read
+}
 
 #Option 1 Menu, Viewing Journal Entries
 viewentriesfunc () 
 {
-#adding all the text files as individual strings to be used as a selection menu
-entrylist=('Go Back')
-rawentry="$(find $BASE_DIR/entries -type f)"
-for i in $rawentry; do
-i=${i##*/}
-entrylist+=("$i")
-done
-
+    getentries
 #display the Menu text
     clear
     display_center "$BASE_DIR/greeterheader.txt"
     echo "$greeter" 
     play -q $BASE_DIR/ui_hacking_charscroll.wav
-    echo Which Journal Entry would you like to access? | pv -qL 80
+    echo Which $utilisateur Journal Entry would you like to access? | pv -qL 80
     
     #display the menu options
     COLUMNS=12
-    select readoption in ${entrylist[@]}
+    select readoption in ${entrynames[@]}
     do
     case $readoption in
     "Go Back")
@@ -172,13 +211,53 @@ done
     play -q $BASE_DIR/ui_hacking_charscroll.wav
     echo "$readoption:"  | pv -qL 80
     play -q $BASE_DIR/ui_hacking_charscroll.wav
-    cat< "$BASE_DIR/entries/$readoption"  | pv -qL 80
+    #cat< "$BASE_DIR/entries/$readoption"  | pv -qL 80
+    
+    ##dbg
+    for edd in ${entrydirs[@]}
+    do
+        echo $edd
+    done
+
+    for edd in ${!entrydirs[@]}
+    do
+        echo $edd
+    done
+
+    for edd in ${entrynames[@]}
+    do
+        echo $edd
+    done
+
+
+    echo "red option : " $readoption
+
+    read
+
+    
+    ##
+    for i in ${!entrynames[@]}
+    do
+        echo  "$i"
+        echo ">>"
+        echo "${entrynames[$i]}"
+        echo "<<"
+        echo "${entrydirs[$i]}"
+        echo "--"
+        if [[ "${entrynames[$i]}" = $readoption ]]
+        then
+            echo "this is it"
+            echo "${entrydirs[$i]}"
+            cat< "${entrydirs[$i]}"  | pv -qL 80
+        fi
+    done
     echo
     read -p "Press enter to continue"
     play -q $BASE_DIR/ui_hacking_charenter_01.wav
     
     #goes back to main menu
-    repeatmainmenufunc
+    #repeatmainmenufunc
+    return 
     done
 }
 
@@ -211,7 +290,8 @@ clear
 play -q $BASE_DIR/ui_hacking_charenter_01.wav
 
 #returns to mainmenu
-repeatmainmenufunc
+#repeatmainmenufunc
+return
 
 
 }
@@ -242,7 +322,8 @@ done
     case $readoption in
     "Go Back")
     play -q $BASE_DIR/ui_hacking_charenter_01.wav
-    repeatmainmenufunc
+    #repeatmainmenufunc
+    return
     ;;
         *)
     play -q $BASE_DIR/ui_hacking_charenter_01.wav
@@ -251,8 +332,8 @@ done
     
     #displays menu text again
     clear
-   display_center "$BASE_DIR/greeterheader.txt"
-   echo "$greeter"
+    display_center "$BASE_DIR/greeterheader.txt"
+    echo "$greeter"
     echo
     play -q $BASE_DIR/ui_hacking_charscroll.wav
     echo "Delete $readoption? Type YES to continue"  | pv -qL 80
@@ -262,24 +343,26 @@ done
     read confirmdeletion
      if  [[ ${confirmdeletion^^} == "YES" ]]
      then
-     rm -f "$BASE_DIR/entries/$readoption"
-     play -q $BASE_DIR/ui_hacking_charenter_01.wav
-     echo FILE DELETED!
-     play -q  $BASE_DIR/ui_hacking_passgood.wav
-     sleep 0.1
-                repeatmainmenufunc
+        rm -f "$BASE_DIR/entries/$readoption"
+        play -q $BASE_DIR/ui_hacking_charenter_01.wav
+        echo FILE DELETED!
+        play -q  $BASE_DIR/ui_hacking_passgood.wav
+        sleep 0.1
+        #repeatmainmenufunc
+        return
                 
             #if something other than yes was typed in
-        else
+    else
         echo OPERATION CANCELLED
         play -q $BASE_DIR/ui_hacking_charenter_01.wav
         play -q  $BASE_DIR/ui_hacking_passbad.wav
         sleep 0.2
         
         #goes back to main menu
-        repeatmainmenufunc
-        fi
-        done
+        #repeatmainmenufunc
+        return
+    fi
+    done
 }
 
 #same as main menu screen function, but without the annoying animations
@@ -303,40 +386,43 @@ do
 done
 }
 
+startupscreen ()
+{
+    #some random aesthetic startup junk
+
+    clear
+    play -q $BASE_DIR/ui_hacking_charscroll.wav
+    echo Initializing boot... | pv -qL 80
+    sleep 0.4
+    play -q $BASE_DIR/ui_hacking_charscroll.wav
+    echo Loading RobCo Unified OS...  | pv -qL 80
+    sleep 0.4
+    play -q $BASE_DIR/ui_hacking_charscroll.wav
+    echo 64K RAM detected...  | pv -qL 80
+    sleep 0.4
+    play -q $BASE_DIR/ui_hacking_charscroll.wav
+    echo Launching Interface...  | pv -qL 80
+    sleep 0.4
+    clear
+    echo $'
 
 
+      _____       _      _____                   
+     |  __ \     | |    / ____|                  
+     | |__) |___ | |__ | |     ___               
+     |  _  // _ \| \'_ \| |    / _ \              
+     | | \ \ (_) | |_) | |___| (_) |             
+     |_|__\_\___/|_.__/ \_____\___/  _           
 
-#some random aesthetic startup junk
+    '
 
-clear
-play -q $BASE_DIR/ui_hacking_charscroll.wav
-echo Initializing boot... | pv -qL 80
-sleep 0.4
-play -q $BASE_DIR/ui_hacking_charscroll.wav
-echo Loading RobCo Unified OS...  | pv -qL 80
-sleep 0.4
-play -q $BASE_DIR/ui_hacking_charscroll.wav
-echo 64K RAM detected...  | pv -qL 80
-sleep 0.4
-play -q $BASE_DIR/ui_hacking_charscroll.wav
-echo Launching Interface...  | pv -qL 80
-sleep 0.4
-clear
-echo $'
+    echo "==============================================" | pv -qL 50
+    play -q $BASE_DIR/ui_hacking_passgood.wav
+    sleep 1
 
+}
 
-  _____       _      _____                   
- |  __ \     | |    / ____|                  
- | |__) |___ | |__ | |     ___               
- |  _  // _ \| \'_ \| |    / _ \              
- | | \ \ (_) | |_) | |___| (_) |             
- |_|__\_\___/|_.__/ \_____\___/  _           
-
-'
-           
-echo "==============================================" | pv -qL 50
-play -q $BASE_DIR/ui_hacking_passgood.wav
-sleep 1
+#startupscreen;
 
 #goes to the main menu
 mainmenupass;

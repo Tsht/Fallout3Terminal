@@ -1,0 +1,6 @@
+blue1:blue1::blue::/home/blue1:/bin/bash
+blue2:blue2::blue::/home/blue2:/bin/bash
+blue3:blue3::blue::/home/blue3:/bin/bash
+red1:red1::red::/home/red1:/bin/bash
+red2:red2::red::/home/red2:/bin/bash
+red3:red3::red::/home/red3:/bin/bash
