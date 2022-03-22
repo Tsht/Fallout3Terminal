@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
 BASE_DIR="$(cd "$(dirname "$0")"; pwd)" || exit 2
-#HACK_FILE=/media/usb0/hack
-HACK_FILE=hack
+#KEY_DIR=/media/usb0/hack
+KEY_DIR=/mnt/k/Fallout/Fallout3Terminal/usbkey
+HACK_FILE=$KEY_DIR/hack
 
 IFS=$'\n'
 entrylist=('Go Back')
@@ -20,7 +21,6 @@ showclk ()
 {
     while sleep 1;do tput sc;tput cup 0 $(($(tput cols)-29));date;tput rc;done &
 }
-
 
 
 showmessage ()
@@ -148,30 +148,69 @@ displaymainmenu()
 #Display the menu options
 COLUMNS=12
 
-select menuchoice in "View Journal Entries for $utilisateur" "Log a Journal Entry" "Delete a Journal Entry" "Logout"
-do
-    case $menuchoice in
-    "View Journal Entries for $utilisateur")
-    play -q $BASE_DIR/ui_hacking_charenter_01.wav
-    viewentriesfunc
-    ;;
-    "Log a Journal Entry")
-    play -q $BASE_DIR/ui_hacking_charenter_01.wav
-    writeentryfunc
-    ;;
-    "Delete a Journal Entry")
-    play -q $BASE_DIR/ui_hacking_charenter_01.wav
-    deleteentryfunc
-    ;;
-    "Logout")
-    play -q $BASE_DIR/ui_hacking_charenter_01.wav
-    echo Goodbye! && return 9
-    ;;
-    *)
-    play -q $BASE_DIR/ui_hacking_passbad.wav
-    ;;
-    esac
-done
+if [ -e $KEY_DIR ]; then
+    select menuchoice in "View Journal Entries for $utilisateur" "View Journal Entries on key" "Log a Journal Entry" "Copy a Journal Entry on key" "Delete a Journal Entry" "Delete a Journal Entry on key" "Logout"
+    do
+        case $menuchoice in
+        "View Journal Entries for $utilisateur")
+        play -q $BASE_DIR/ui_hacking_charenter_01.wav
+        viewentriesfunc
+        ;;
+        "View Journal Entries on key")
+        play -q $BASE_DIR/ui_hacking_charenter_01.wav
+        viewentriesonkeyfunc
+        ;;
+        "Log a Journal Entry")
+        play -q $BASE_DIR/ui_hacking_charenter_01.wav
+        writeentryfunc
+        ;;
+        "Copy a Journal Entry on key")
+        play -q $BASE_DIR/ui_hacking_charenter_01.wav
+        copyentryonkeyfunc
+        ;;
+        "Delete a Journal Entry")
+        play -q $BASE_DIR/ui_hacking_charenter_01.wav
+        deleteentryfunc
+        ;;
+        "Delete a Journal Entry on key")
+        play -q $BASE_DIR/ui_hacking_charenter_01.wav
+        deleteentryonkeyfunc
+        ;;
+        "Logout")
+        play -q $BASE_DIR/ui_hacking_charenter_01.wav
+        echo Goodbye! && return 9
+        ;;
+        *)
+        play -q $BASE_DIR/ui_hacking_passbad.wav
+        ;;
+        esac
+    done
+else
+    select menuchoice in "View Journal Entries for $utilisateur" "Log a Journal Entry" "Delete a Journal Entry" "Logout"
+    do
+        case $menuchoice in
+        "View Journal Entries for $utilisateur")
+        play -q $BASE_DIR/ui_hacking_charenter_01.wav
+        viewentriesfunc
+        ;;
+        "Log a Journal Entry")
+        play -q $BASE_DIR/ui_hacking_charenter_01.wav
+        writeentryfunc
+        ;;
+        "Delete a Journal Entry")
+        play -q $BASE_DIR/ui_hacking_charenter_01.wav
+        deleteentryfunc
+        ;;
+        "Logout")
+        play -q $BASE_DIR/ui_hacking_charenter_01.wav
+        echo Goodbye! && return 9
+        ;;
+        *)
+        play -q $BASE_DIR/ui_hacking_passbad.wav
+        ;;
+        esac
+    done
+fi
 }
 
 
@@ -234,10 +273,8 @@ done
 #read
 }
 
-#Option 1 Menu, Viewing Journal Entries
-viewentriesfunc () 
+displayentries()
 {
-    getentries
 #display the Menu text
     clear
     display_center "$BASE_DIR/greeterheader.txt"
@@ -304,6 +341,93 @@ viewentriesfunc ()
     return 
     done
 }
+
+#Option 1 Menu, Viewing Journal Entries
+viewentriesfunc () 
+{
+    getentries
+    displayentries
+}
+
+
+viewentriesonkeyfunc ()
+{
+    entrynames=('Go Back')
+    entrydirs=('')
+    entryusers=('')
+
+    search_dir=$KEY_DIR/userfiles
+    for entry in "$search_dir"/*
+    do
+        filename=${entry##*/}
+        entrydirs+=("$entry")
+        entrynames+=("$filename (key)")
+    done
+    displayentries
+    return
+}
+
+copyentryonkeyfunc ()
+{
+    getentries
+    selectcopyentry
+    return
+}
+
+selectcopyentry ()
+{
+    clear
+    display_center "$BASE_DIR/greeterheader.txt"
+    echo "$greeter" 
+    play -q $BASE_DIR/ui_hacking_charscroll.wav
+    echo Which $utilisateur Journal Entry would you like to copy? | pv -qL 80
+    
+    #display the menu options
+    COLUMNS=12
+    select readoption in ${entrynames[@]}
+    do
+    case $readoption in
+    "Go Back")
+    play -q $BASE_DIR/ui_hacking_charenter_01.wav
+    #repeatmainmenufunc
+    return
+    ;;
+        *)
+    play -q $BASE_DIR/ui_hacking_charenter_01.wav
+    ;;
+    esac
+
+    #displays the selected entry
+    clear
+    display_center "$BASE_DIR/greeterheader.txt"
+    echo "$greeter"
+    echo
+    play -q $BASE_DIR/ui_hacking_charscroll.wav
+    echo "$readoption:"  | pv -qL 80
+    play -q $BASE_DIR/ui_hacking_charscroll.wav
+    
+    for i in ${!entrynames[@]}
+    do
+        if [[ "${entrynames[$i]}" = $readoption ]]
+        then
+            cp "${entrydirs[$i]}" $KEY_DIR/userfiles
+        fi
+    done
+    echo "Copied."
+    read -p "Press enter to continue"
+    play -q $BASE_DIR/ui_hacking_charenter_01.wav
+    
+    #goes back to main menu
+    #repeatmainmenufunc
+    return 
+    done
+}
+
+deleteentriesonkeyfunc ()
+{
+    return
+}
+
 
 #menu for writing an entry
 writeentryfunc () 
