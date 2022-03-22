@@ -12,7 +12,7 @@ i=${i##*/}
 entrylist+=("$i")
 done
 
-hackeruser=hacker
+hackeruser=fallout_hack
 
 COLUMNS=12
 
