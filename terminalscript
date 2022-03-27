@@ -1,8 +1,18 @@
 #!/usr/bin/env bash
 
-BASE_DIR="$(cd "$(dirname "$0")"; pwd)" || exit 2
+## Configuration
+
+#Changer KEY_DIR pour le chemin vers lequel la clef USB sera montee
 #KEY_DIR=/media/usb0/hack
 KEY_DIR=/mnt/k/Fallout/Fallout3Terminal/usbkey
+
+#Nom du user qui sera loggue quand le hack est correct
+hackeruser=fallout_hack
+
+## Fin de configuration
+
+BASE_DIR="$(cd "$(dirname "$0")"; pwd)" || exit 2
+
 HACK_FILE=$KEY_DIR/hack
 
 IFS=$'\n'
@@ -12,8 +22,6 @@ for i in $rawentry; do
 i=${i##*/}
 entrylist+=("$i")
 done
-
-hackeruser=fallout_hack
 
 COLUMNS=12
 
@@ -148,69 +156,67 @@ displaymainmenu()
 #Display the menu options
 COLUMNS=12
 
-if [ -e $KEY_DIR ]; then
-    select menuchoice in "View Journal Entries for $utilisateur" "View Journal Entries on key" "Log a Journal Entry" "Copy a Journal Entry on key" "Delete a Journal Entry" "Delete a Journal Entry on key" "Logout"
-    do
-        case $menuchoice in
-        "View Journal Entries for $utilisateur")
-        play -q $BASE_DIR/ui_hacking_charenter_01.wav
-        viewentriesfunc
-        ;;
-        "View Journal Entries on key")
-        play -q $BASE_DIR/ui_hacking_charenter_01.wav
-        viewentriesonkeyfunc
-        ;;
-        "Log a Journal Entry")
-        play -q $BASE_DIR/ui_hacking_charenter_01.wav
-        writeentryfunc
-        ;;
-        "Copy a Journal Entry on key")
-        play -q $BASE_DIR/ui_hacking_charenter_01.wav
-        copyentryonkeyfunc
-        ;;
-        "Delete a Journal Entry")
-        play -q $BASE_DIR/ui_hacking_charenter_01.wav
-        deleteentryfunc
-        ;;
-        "Delete a Journal Entry on key")
-        play -q $BASE_DIR/ui_hacking_charenter_01.wav
-        deleteentryonkeyfunc
-        ;;
-        "Logout")
-        play -q $BASE_DIR/ui_hacking_charenter_01.wav
-        echo Goodbye! && return 9
-        ;;
-        *)
-        play -q $BASE_DIR/ui_hacking_passbad.wav
-        ;;
-        esac
-    done
-else
-    select menuchoice in "View Journal Entries for $utilisateur" "Log a Journal Entry" "Delete a Journal Entry" "Logout"
-    do
-        case $menuchoice in
-        "View Journal Entries for $utilisateur")
-        play -q $BASE_DIR/ui_hacking_charenter_01.wav
-        viewentriesfunc
-        ;;
-        "Log a Journal Entry")
-        play -q $BASE_DIR/ui_hacking_charenter_01.wav
-        writeentryfunc
-        ;;
-        "Delete a Journal Entry")
-        play -q $BASE_DIR/ui_hacking_charenter_01.wav
-        deleteentryfunc
-        ;;
-        "Logout")
-        play -q $BASE_DIR/ui_hacking_charenter_01.wav
-        echo Goodbye! && return 9
-        ;;
-        *)
-        play -q $BASE_DIR/ui_hacking_passbad.wav
-        ;;
-        esac
-    done
-fi
+while [ true ]; do
+    if [ -e $KEY_DIR ]; then
+        select menuchoice in "View Journal Entries for your group" "View Journal Entries on key" "Log a Journal Entry" "Copy a Journal Entry on key" "Delete a Journal Entry" "Logout"
+        do
+            case $menuchoice in
+            "View Journal Entries for your group")
+            play -q $BASE_DIR/ui_hacking_charenter_01.wav
+            viewentriesfunc
+            break;;
+            "View Journal Entries on key")
+            play -q $BASE_DIR/ui_hacking_charenter_01.wav
+            viewentriesonkeyfunc
+            break;;
+            "Log a Journal Entry")
+            play -q $BASE_DIR/ui_hacking_charenter_01.wav
+            writeentryfunc
+            break;;
+            "Copy a Journal Entry on key")
+            play -q $BASE_DIR/ui_hacking_charenter_01.wav
+            copyentryonkeyfunc
+            break;;
+            "Delete a Journal Entry")
+            play -q $BASE_DIR/ui_hacking_charenter_01.wav
+            deleteentryfunc
+            break;;
+            "Logout")
+            play -q $BASE_DIR/ui_hacking_charenter_01.wav
+            echo Goodbye! && return 9
+            break;;
+            *)
+            play -q $BASE_DIR/ui_hacking_passbad.wav
+            break;;
+            esac
+        done
+    else
+        select menuchoice in "View Journal Entries for your group" "Log a Journal Entry" "Delete a Journal Entry" "Logout"
+        do
+            case $menuchoice in
+            "View Journal Entries for your group")
+            play -q $BASE_DIR/ui_hacking_charenter_01.wav
+            viewentriesfunc
+            break;;
+            "Log a Journal Entry")
+            play -q $BASE_DIR/ui_hacking_charenter_01.wav
+            writeentryfunc
+            break;;
+            "Delete a Journal Entry")
+            play -q $BASE_DIR/ui_hacking_charenter_01.wav
+            deleteentryfunc
+            break;;
+            "Logout")
+            play -q $BASE_DIR/ui_hacking_charenter_01.wav
+            echo Goodbye! && return 9
+            break;;
+            *)
+            play -q $BASE_DIR/ui_hacking_passbad.wav
+            break;;
+            esac
+        done
+    fi
+done
 }
 
 
@@ -241,15 +247,25 @@ entryusers=('')
 #hackeruser="blue1"
 ##
 
+usersblue=`members blue` 
+usersred=`members red` 
+
 if [ $utilisateur = $hackeruser ]
 then
-users=`members blue`
+users=$usersblue
 users+=" "
-users+=`members red`
-IFS=' ' read -a usersarr <<< $users
+users+=$usersred
+#IFS=' ' read -a usersarr <<< $users
 else
-usersarr=($utilisateur)
+    #usersarr=($utilisateur)
+    #on voit tous les fichiers de son groupe
+    if [[ "$usersblue" == *"$utilisateur"* ]]; then
+        users+=$usersblue
+    elif [[ "$usersred" == *"$utilisateur"* ]]; then
+        users+=$usersred
+    fi
 fi
+IFS=' ' read -a usersarr <<< $users
 
 for user in ${usersarr[@]}
 do
@@ -262,12 +278,12 @@ for i in ${entrydirs[@]}
 do
     usrdir=`echo $i | cut -f 3 -d /`
     i=${i##*/}
-    if [ $utilisateur = $hackeruser ]
-    then
+    #if [ $utilisateur = $hackeruser ]
+    #then
         entrynames+=("$i ($usrdir)")
-    else
-        entrynames+=("$i")
-    fi
+    #else
+    #    entrynames+=("$i")
+    #fi
 #    echo -e $i
 done
 #read
@@ -275,7 +291,7 @@ done
 
 displayentries()
 {
-#display the Menu text
+    #display the Menu text
     clear
     display_center "$BASE_DIR/greeterheader.txt"
     echo "$greeter" 
@@ -423,15 +439,13 @@ selectcopyentry ()
     done
 }
 
-deleteentriesonkeyfunc ()
-{
-    return
-}
-
-
 #menu for writing an entry
 writeentryfunc () 
 {
+
+userdir=`getent passwd $utilisateur | cut -d":" -f6`
+userdir+="/fallout_entries/entries/"
+
 
 #displays menu text
 clear
@@ -452,8 +466,11 @@ play -q $BASE_DIR/ui_hacking_charscroll.wav
 echo $entrynameinput:  | pv -qL 80
 echo
 #uses cat text editor to write entries. ctrl+d to finish
-cat >"$BASE_DIR/entries/$entrynameinput"
-cat "$BASE_DIR/entries/$entrynameinput"
+cat >"$userdir/$entrynameinput"
+echo "Signature : $utilisateur" > "$userdir/$entrynameinput"
+cat "$userdir/$entrynameinput"
+echo "Press any key to go back"
+read
 clear
 play -q $BASE_DIR/ui_hacking_charenter_01.wav
 
@@ -464,17 +481,22 @@ return
 
 }
 
-#menu to delete an entry
-deleteentryfunc () 
+deleteentryfunc()
 {
+    #On ne peut supprimer que ses propres fichiers
+    if [ $utilisateur = $hackeruser ]  #normalement, ca ne doit pas arriver
+    then
+        return
+    fi
+    entrylist=('Go Back')
 
-#adding all the text files as individual strings to be used as a selection menu
-entrylist=('Go Back')
-rawentry="$(find $BASE_DIR/entries -type f)"
-for i in $rawentry; do
-i=${i##*/}
-entrylist+=("$i")
-done
+    userdir=`getent passwd $utilisateur | cut -d":" -f6`
+
+    rawentry="$(find $userdir/fallout_entries/entries -type f)"
+    for i in $rawentry; do
+    i=${i##*/}
+    entrylist+=("$i")
+    done
 
     #displays menu text
     clear
